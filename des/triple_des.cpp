@@ -1,4 +1,5 @@
 #include "triple_des.h"
+#include <string>
 
 triple_des::triple_des(const std::string& key1, const std::string& key2) : des1_(key1), des2_(key2)
 {}

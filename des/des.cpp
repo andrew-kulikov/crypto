@@ -1,32 +1,63 @@
-#include "gost.h"
+#include "des.h"
 #include "utils.h"
 #include "constants.h"
 
 
-vector<bool> gost::g(vector<bool> u, int r)
+vector<bool> des::extend_key(const vector<bool>& key_bits)
 {
-	
+	const int len = key_bits.size();
+	vector<bool> key_ext;
+
+	for (auto i = 0, cur = 0; i < len; i++)
+	{
+		cur ^= key_bits[i];
+		key_ext.push_back(key_bits[i]);
+
+		if ((i + 1) % 7 == 0)
+		{
+			key_ext.push_back(!cur);
+			cur = 0;
+		}
+	}
+
+	return key_ext;
 }
 
-vector<vector<bool>> gost::generate_keys(const string& key) const
+
+vector<vector<bool>> des::generate_keys(const string& key) const
 {
-	const auto size = 256;
-	const auto block_size = 32;
+	const auto size = 56;
 
 	const vector<char> bytes(key.begin(), key.end());
 	const auto bits = get_bits(bytes);
 	const vector<bool> key_bits(bits.begin(), bits.begin() + size);
 
+	auto key_ext = extend_key(key_bits);
+	key_ext = permutate(key_ext, kp1);
+
+	vector<bool> c(key_ext.begin(), key_ext.begin() + size / 2);
+	vector<bool> d(key_ext.begin() + size / 2, key_ext.end());
+	
 	vector<vector<bool>> keys;
 
-	for (auto i = 0; i < 7; i++)
-		for (auto j = 0; j < 8; j++)
-			keys.emplace_back(key_bits.begin() + block_size * j, key_bits.begin() + block_size * (j + 1));
+	for (auto i = 0; i < 16; i++)
+	{
+		rotate(c.begin(), c.begin() + rt[i], c.end());
+		rotate(d.begin(), d.begin() + rt[i], d.end());
+
+		vector<bool> cur_key;
+		cur_key.insert(cur_key.end(), c.begin(), c.end());
+		cur_key.insert(cur_key.end(), d.begin(), d.end());
+
+		cur_key = permutate(cur_key, kp2);
+
+		keys.push_back(cur_key);
+	}
 
 	return keys;
 }
 
-vector<bool> gost::feistel(const vector<bool>& r, const vector<bool>& key) const
+vector<bool> des::feistel(const vector<bool>& r, const vector<bool>& key) const
 {
 	vector<bool> res;
 
@@ -50,7 +81,7 @@ vector<bool> gost::feistel(const vector<bool>& r, const vector<bool>& key) const
 	return res;
 }
 
-vector<bool> gost::encrypt_block(const vector<bool>& block, const vector<vector<bool>>& keys, const bool& decrypt) const
+vector<bool> des::encrypt_block(const vector<bool>& block, const vector<vector<bool>>& keys, const bool& decrypt) const
 {
 	vector<bool> res;
 	auto src = permutate(block, ip);
@@ -75,7 +106,6 @@ vector<bool> gost::encrypt_block(const vector<bool>& block, const vector<vector<
 		start += inc;
 	}
 
-	res.reserve(size);
 	res.insert(res.end(), r.begin(), r.end());
 	res.insert(res.end(), l.begin(), l.end());
 
@@ -84,12 +114,12 @@ vector<bool> gost::encrypt_block(const vector<bool>& block, const vector<vector<
 	return res;
 }
 
-gost::gost()
+des::des()
 {
 	keys_ = generate_keys(default_key_);
 }
 
-string gost::encrypt(const string& message, const bool& decrypt) const
+string des::encrypt(const string& message, const bool& decrypt) const
 {
 	const vector<char> bytes(message.begin(), message.end());
 	const auto bits = get_bits(bytes);
@@ -102,17 +132,17 @@ string gost::encrypt(const string& message, const bool& decrypt) const
 	return restore_message(encrypted_blocks);
 }
 
-gost::gost(const string& base_key)
+des::des(const string& base_key)
 {
 	keys_ = generate_keys(base_key);
 }
 
-string gost::encrypt(const string& message) const
+string des::encrypt(const string& message) const
 {
 	return encrypt(message, false);
 }
 
-string gost::decrypt(const string& message) const
+string des::decrypt(const string& message) const
 {
 	return encrypt(message, true);
 }
