@@ -6,6 +6,38 @@
 
 using namespace std;
 
+int to_int(const vector<bool>& bits)
+{
+	unsigned int res = 0;
+	const unsigned int len = bits.size();
+
+	for (unsigned int i = 0; i < len; i++) res += bits[i] << (len - i - 1);
+
+	return res;
+}
+
+vector<bool> plus_vec(const vector<bool>& a, const vector<bool>& b, const int mod)
+{
+	const auto size = a.size();
+
+	const auto a_int = to_int(a);
+	const auto b_int = to_int(b);
+	const auto res_int = (a_int + b_int) % mod;
+
+	return get_bits(res_int, size);
+}
+
+vector<bool> minus_vec(const vector<bool>& a, const vector<bool>& b, const int mod)
+{
+	const auto size = a.size();
+
+	const auto a_int = to_int(a);
+	const auto b_int = to_int(b);
+	const auto res_int = (a_int - b_int) % mod;
+
+	return get_bits(res_int, size);
+}
+
 vector<bool> permutate(const vector<bool>& block, const vector<int>& table)
 {
 	const auto len = table.size();

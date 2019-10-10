@@ -10,6 +10,8 @@ private:
 	const string default_key_ = "qwertyuiasdfghjkzxcvbnmkpoiuytre";
 	vector<vector<bool>> keys_;
 
+	vector<bool> h_permutation(vector<bool> u) const;
+	vector<bool> g(const vector<bool>& u, int r) const;
 	vector<vector<bool>> generate_keys(const string& key) const;
 	vector<bool> feistel(const vector<bool>& r, const vector<bool>& key) const;
 	vector<bool> encrypt_block(const vector<bool>& block, const vector<vector<bool>>& keys, const bool& decrypt) const;

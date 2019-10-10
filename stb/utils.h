@@ -5,6 +5,8 @@
 
 using namespace std;
 
+int to_int(const vector<bool>& bits);
+
 vector<bool> permutate(const vector<bool>& block, const vector<int>& table);
 
 vector<bool> xor_v(vector<bool> a, vector<bool> b);
@@ -12,6 +14,10 @@ vector<bool> xor_v(vector<bool> a, vector<bool> b);
 vector<bool> get_bits(const vector<char>& text);
 
 vector<bool> get_bits(int val, int size);
+
+vector<bool> plus_vec(const vector<bool>& a, const vector<bool>& b, int mod);
+
+vector<bool> minus_vec(const vector<bool>& a, const vector<bool>& b, int mod);
 
 vector<vector<bool>> get_blocks(vector<bool> bits);
 

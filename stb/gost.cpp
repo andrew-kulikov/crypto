@@ -3,9 +3,33 @@
 #include "constants.h"
 
 
-vector<bool> gost::g(vector<bool> u, int r)
+vector<bool> gost::h_permutation(vector<bool> u) const
 {
+	const auto y = (u[0] << 3) + (u[1] << 2) + (u[2] << 1) + u[3];
+	const auto x = (u[4] << 3) + (u[5] << 2) + (u[6] << 1) + u[7];
+
+	return get_bits(H[y][x], 8);
+}
+
+vector<bool> gost::g(const vector<bool>& u, int r) const
+{
+	const auto block_size = 8;
+	const auto len = u.size();
 	
+	vector<bool> u_new;
+	u_new.reserve(len);
+
+	for (auto i = 0; i < 4; i++)
+	{
+		vector<bool> cur_u(u.begin() + block_size * i, u.begin() + block_size * (i + 1));
+		cur_u = h_permutation(cur_u);
+
+		u_new.insert(u_new.end(), cur_u.begin(), cur_u.end());
+	}
+
+	rotate(u_new.begin(), u_new.begin() + r, u_new.end());
+	
+	return u_new;
 }
 
 vector<vector<bool>> gost::generate_keys(const string& key) const
@@ -52,34 +76,23 @@ vector<bool> gost::feistel(const vector<bool>& r, const vector<bool>& key) const
 
 vector<bool> gost::encrypt_block(const vector<bool>& block, const vector<vector<bool>>& keys, const bool& decrypt) const
 {
+	const auto size = block.size();
+	const auto part_size = 32;
+	
 	vector<bool> res;
-	auto src = permutate(block, ip);
-	const auto size = src.size();
+	
+	vector<bool> a(block.begin(), block.begin() + part_size);
+	vector<bool> b(block.begin() + part_size, block.begin() + part_size * 2);
+	vector<bool> c(block.begin() + part_size * 2, block.begin() + part_size * 3);
+	vector<bool> d(block.begin() + part_size * 3, block.begin() + part_size * 4);
+	vector<bool> e;
 
-	vector<bool> l(src.begin(), src.begin() + size / 2);
-	vector<bool> r(src.begin() + size / 2, src.end());
-
-	auto start = 0, end = 16, inc = 1;
-	if (decrypt) start = 15, end = -1, inc = -1;
-
-	while (start != end)
+	for (auto i = 0; i < 8; i++)
 	{
-		auto new_l = r;
-		auto new_r = feistel(r, keys[start]);
-
-		new_r = xor_v(new_r, l);
-
-		r = vector<bool>(new_r);
-		l = vector<bool>(new_l);
-
-		start += inc;
+		b = xor_v(b, g(plus_vec(a, keys[7 * i], 32), 5));
+		c = xor_v(c, g(plus_vec(d, keys[7 * i + 1], 32), 21));
+		a = minus_vec(a, g(plus_vec(b, keys[7 * i + 2], 32), 13), 32);
 	}
-
-	res.reserve(size);
-	res.insert(res.end(), r.begin(), r.end());
-	res.insert(res.end(), l.begin(), l.end());
-
-	res = permutate(res, fp);
 
 	return res;
 }
