@@ -22,7 +22,7 @@ vector<bool> plus_vec(const vector<bool>& a, const vector<bool>& b, const int mo
 
 	const auto a_int = to_int(a);
 	const auto b_int = to_int(b);
-	const auto res_int = (a_int + b_int) % mod;
+	const auto res_int = (a_int + b_int) % (1 << mod);
 
 	return get_bits(res_int, size);
 }
@@ -33,7 +33,7 @@ vector<bool> minus_vec(const vector<bool>& a, const vector<bool>& b, const int m
 
 	const auto a_int = to_int(a);
 	const auto b_int = to_int(b);
-	const auto res_int = (a_int - b_int) % mod;
+	const auto res_int = (a_int - b_int) % (1 << mod);
 
 	return get_bits(res_int, size);
 }
@@ -76,7 +76,7 @@ vector<bool> get_bits(const vector<char>& text)
 	return res;
 }
 
-vector<bool> get_bits(const int val, const int size)
+vector<bool> get_bits(const long long val, const int size)
 {
 	vector<bool> res;
 

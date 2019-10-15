@@ -5,6 +5,8 @@
 
 using namespace std;
 
+int to_int(const vector<bool>& bits);
+
 vector<bool> permutate(const vector<bool>& block, const vector<int>& table);
 
 vector<bool> xor_v(vector<bool> a, vector<bool> b);

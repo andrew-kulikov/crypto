@@ -6,6 +6,16 @@
 
 using namespace std;
 
+int to_int(const vector<bool>& bits)
+{
+	unsigned int res = 0;
+	const unsigned int len = bits.size();
+
+	for (unsigned int i = 0; i < len; i++) res += bits[i] << (len - i - 1);
+
+	return res;
+}
+
 vector<bool> permutate(const vector<bool>& block, const vector<int>& table)
 {
 	const auto len = table.size();

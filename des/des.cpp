@@ -29,11 +29,11 @@ vector<vector<bool>> des::generate_keys(const string& key) const
 	const auto size = 56;
 
 	const vector<char> bytes(key.begin(), key.end());
-	const auto bits = get_bits(bytes);
-	const vector<bool> key_bits(bits.begin(), bits.begin() + size);
+	auto bits = get_bits(bytes);
+	const vector<bool> key_bits(bits.begin(), bits.begin() + 64);
 
-	auto key_ext = extend_key(key_bits);
-	key_ext = permutate(key_ext, kp1);
+	//auto key_ext = extend_key(key_bits);
+	auto key_ext = permutate(key_bits, kp1);
 
 	vector<bool> c(key_ext.begin(), key_ext.begin() + size / 2);
 	vector<bool> d(key_ext.begin() + size / 2, key_ext.end());
@@ -128,7 +128,7 @@ string des::encrypt(const string& message, const bool& decrypt) const
 	vector<vector<bool>> encrypted_blocks;
 	encrypted_blocks.reserve(blocks.size());
 	for (const auto& block : blocks) encrypted_blocks.push_back(encrypt_block(block, keys_, decrypt));
-
+	
 	return restore_message(encrypted_blocks);
 }
 
