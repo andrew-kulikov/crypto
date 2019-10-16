@@ -3,15 +3,70 @@
 #include <string>
 #include "utils.h"
 #include <iostream>
+#include <sstream>
 
 using namespace std;
 
-int to_int(const vector<bool>& bits)
-{
-	unsigned int res = 0;
-	const unsigned int len = bits.size();
 
-	for (unsigned int i = 0; i < len; i++) res += bits[i] << (len - i - 1);
+
+vector<bool> rev(const vector<bool>& v)
+{
+	auto res = v;
+	reverse(res.begin(), res.end());
+	return res;
+}
+
+vector<bool> rev_bytes(const vector<bool>& v)
+{
+	vector<bool> res;
+	const auto len = v.size();
+	
+	for (unsigned int i = 0; i < len; i += 8)
+	{
+		vector<bool> cur(v.begin() + i, v.begin() + i + 8);
+		res.insert(res.begin(), cur.begin(), cur.end());
+	}
+
+	return res;
+}
+
+string hex_to_str(string hex)
+{
+	const auto final_len = hex.size() / 2;
+	string res;
+	for (size_t i = 0, j = 0; j < final_len; i += 2, j++) {
+		const auto c = char((hex[i] % 32 + 9) % 25 * 16 + (hex[i + 1] % 32 + 9) % 25);
+		res += c;
+	}
+
+	return res;
+}
+
+void print_hex(vector<bool> bits)
+{
+	const auto len = bits.size();
+	for (unsigned int i = 0; i < len; i += 4)
+	{
+		vector<bool> cur(bits.begin() + i, bits.begin() + i + 4);
+		cout << to_hex(to_int(cur));
+	}
+	cout << endl;
+}
+
+string to_hex(const int x)
+{
+	stringstream stream;
+	stream << std::hex << x;
+
+	return stream.str();
+}
+
+ll to_int(const vector<bool>& bits)
+{
+	ll res = 0;
+	const auto len = bits.size();
+
+	for (unsigned int i = 0; i < len; i++) res += ll(bits[i]) << (len - i - 1);
 
 	return res;
 }
@@ -19,23 +74,30 @@ int to_int(const vector<bool>& bits)
 vector<bool> plus_vec(const vector<bool>& a, const vector<bool>& b, const int mod)
 {
 	const auto size = a.size();
+	
+	const auto a_int = to_int(rev_bytes(a));
+	const auto b_int = to_int(rev_bytes(b));
+	const auto res_int = (a_int + b_int) % (1LL << mod);
 
-	const auto a_int = to_int(a);
-	const auto b_int = to_int(b);
-	const auto res_int = (a_int + b_int) % (1 << mod);
+	//cout << a_int << " " << b_int << endl;
+	//cout << to_int(rev_bytes(a)) << " " << to_int(rev_bytes(b)) << endl;
 
-	return get_bits(res_int, size);
+	const auto res = get_bits(res_int, size);
+	
+	return rev_bytes(res);
 }
 
 vector<bool> minus_vec(const vector<bool>& a, const vector<bool>& b, const int mod)
 {
 	const auto size = a.size();
 
-	const auto a_int = to_int(a);
-	const auto b_int = to_int(b);
-	const auto res_int = (a_int - b_int) % (1 << mod);
+	const auto a_int = to_int(rev_bytes(a));
+	const auto b_int = to_int(rev_bytes(b));
+	const auto res_int = (a_int - b_int) % (1LL << mod);
 
-	return get_bits(res_int, size);
+	const auto res = get_bits(res_int, size);
+	
+	return rev_bytes(res);
 }
 
 vector<bool> permutate(const vector<bool>& block, const vector<int>& table)
@@ -64,10 +126,11 @@ vector<bool> get_bits(const vector<char>& text)
 	vector<bool> res;
 	for (auto c : text)
 	{
+		const int cur_c = c < 0 ? 256 + c : c;
 		vector<bool> tmp;
 		tmp.reserve(8);
 		for (auto i = 0; i < 8; i++)
-			tmp.push_back((c >> i) & 1);
+			tmp.push_back((cur_c >> i) & 1);
 
 		reverse(tmp.begin(), tmp.end());
 		res.insert(res.end(), tmp.begin(), tmp.end());
@@ -76,7 +139,14 @@ vector<bool> get_bits(const vector<char>& text)
 	return res;
 }
 
-vector<bool> get_bits(const long long val, const int size)
+void swap_vec(vector<bool>& v1, vector<bool>& v2)
+{
+	const auto temp = v1;
+	v1 = v2;
+	v2 = temp;
+}
+
+vector<bool> get_bits(const ll val, const int size)
 {
 	vector<bool> res;
 
@@ -87,7 +157,7 @@ vector<bool> get_bits(const long long val, const int size)
 	return res;
 }
 
-vector<vector<bool>> get_blocks(vector<bool> bits)
+vector<vector<bool>> get_blocks(vector<bool> bits, const unsigned int block_size)
 {
 	vector<vector<bool>> res;
 	vector<bool> batch;
@@ -96,7 +166,7 @@ vector<vector<bool>> get_blocks(vector<bool> bits)
 	{
 		batch.push_back(bits[i]);
 
-		if ((i + 1) % 64 == 0)
+		if ((i + 1) % block_size == 0)
 		{
 			res.push_back(batch);
 			batch.clear();
@@ -105,7 +175,7 @@ vector<vector<bool>> get_blocks(vector<bool> bits)
 
 	if (!batch.empty())
 	{
-		while (batch.size() < 64) batch.push_back(false);
+		while (batch.size() < block_size) batch.push_back(false);
 		res.push_back(batch);
 	}
 

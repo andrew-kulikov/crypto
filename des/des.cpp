@@ -123,7 +123,7 @@ string des::encrypt(const string& message, const bool& decrypt) const
 {
 	const vector<char> bytes(message.begin(), message.end());
 	const auto bits = get_bits(bytes);
-	auto blocks = get_blocks(bits);
+	auto blocks = get_blocks(bits, 64);
 
 	vector<vector<bool>> encrypted_blocks;
 	encrypted_blocks.reserve(blocks.size());

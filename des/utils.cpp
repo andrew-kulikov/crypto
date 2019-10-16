@@ -65,7 +65,7 @@ vector<bool> get_bits(const int val, const int size)
 	return res;
 }
 
-vector<vector<bool>> get_blocks(vector<bool> bits)
+vector<vector<bool>> get_blocks(vector<bool> bits, const unsigned int block_size)
 {
 	vector<vector<bool>> res;
 	vector<bool> batch;
@@ -74,7 +74,7 @@ vector<vector<bool>> get_blocks(vector<bool> bits)
 	{
 		batch.push_back(bits[i]);
 
-		if ((i + 1) % 64 == 0)
+		if ((i + 1) % block_size == 0)
 		{
 			res.push_back(batch);
 			batch.clear();
@@ -83,7 +83,7 @@ vector<vector<bool>> get_blocks(vector<bool> bits)
 
 	if (!batch.empty())
 	{
-		while (batch.size() < 64) batch.push_back(false);
+		while (batch.size() < block_size) batch.push_back(false);
 		res.push_back(batch);
 	}
 

@@ -15,7 +15,7 @@ vector<bool> get_bits(const vector<char>& text);
 
 vector<bool> get_bits(int val, int size);
 
-vector<vector<bool>> get_blocks(vector<bool> bits);
+vector<vector<bool>> get_blocks(vector<bool> bits, unsigned int block_size);
 
 char restore_byte(const vector<bool>& bits);
 
