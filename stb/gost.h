@@ -15,11 +15,13 @@ private:
 	vector<vector<bool>> generate_keys(const string& key) const;
 	vector<bool> encrypt_block(const vector<bool>& block, const vector<vector<bool>>& keys) const;
 	vector<bool> decrypt_block(const vector<bool>& block, const vector<vector<bool>>& keys) const;
-	string encrypt(const string& message, const bool& decrypt) const;
 public:
 	gost();
 	explicit gost(const string& base_key);
 
-	string encrypt(const string& message) const;
-	string decrypt(const string& message) const;
+	string encrypt_simple(const string& message) const;
+	string decrypt_simple(const string& message) const;
+
+	string encrypt_blocks(const string& message, const string& sync) const;
+	string decrypt_blocks(const string& message, const string& sync) const;
 };

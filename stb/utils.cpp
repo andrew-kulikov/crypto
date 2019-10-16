@@ -157,7 +157,7 @@ vector<bool> get_bits(const ll val, const int size)
 	return res;
 }
 
-vector<vector<bool>> get_blocks(vector<bool> bits, const unsigned int block_size)
+vector<vector<bool>> get_blocks(vector<bool> bits, const unsigned int block_size, const bool fill_zeros)
 {
 	vector<vector<bool>> res;
 	vector<bool> batch;
@@ -175,7 +175,7 @@ vector<vector<bool>> get_blocks(vector<bool> bits, const unsigned int block_size
 
 	if (!batch.empty())
 	{
-		while (batch.size() < block_size) batch.push_back(false);
+		if (fill_zeros) while (batch.size() < block_size) batch.push_back(false);
 		res.push_back(batch);
 	}
 

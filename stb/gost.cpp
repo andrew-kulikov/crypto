@@ -143,31 +143,163 @@ gost::gost()
 	keys_ = generate_keys(default_key_);
 }
 
-string gost::encrypt(const string& message, const bool& decrypt) const
-{
-	const vector<char> bytes(message.begin(), message.end());
-	const auto bits = get_bits(bytes);
-	auto blocks = get_blocks(bits, 128);
-	
-	vector<vector<bool>> encrypted_blocks;
-	encrypted_blocks.reserve(blocks.size());
-	for (const auto& block : blocks) encrypted_blocks.push_back(
-		decrypt ? decrypt_block(block, keys_) : encrypt_block(block, keys_));
-
-	return restore_message(encrypted_blocks);
-}
-
 gost::gost(const string& base_key)
 {
 	keys_ = generate_keys(base_key);
 }
 
-string gost::encrypt(const string& message) const
+string gost::encrypt_simple(const string& message) const
 {
-	return encrypt(message, false);
+	const vector<char> bytes(message.begin(), message.end());
+	const auto bits = get_bits(bytes);
+	auto blocks = get_blocks(bits, 128, false);
+
+	vector<vector<bool>> encrypted_blocks;
+	encrypted_blocks.reserve(blocks.size());
+
+	const auto len = blocks.size();
+	if (len > 2) for (unsigned int i = 0; i < len - 2; i++) encrypted_blocks.push_back(encrypt_block(blocks[i], keys_));
+
+	const auto rest = 128 - blocks[len - 1].size();
+	if (rest != 0)
+	{
+		auto yn = encrypt_block(blocks[len - 2], keys_);
+		auto r = vector<bool>(yn.end() - rest, yn.end());
+		yn = vector<bool>(yn.begin(), yn.end() - rest);
+
+		auto xn = blocks[len - 1];
+		xn.insert(xn.end(), r.begin(), r.end());
+
+		const auto y_prev = encrypt_block(xn, keys_);
+
+		encrypted_blocks.push_back(y_prev);
+		encrypted_blocks.push_back(yn);
+	}
+	else
+	{
+		if (len > 1) encrypted_blocks.push_back(encrypt_block(blocks[len - 2], keys_));
+		encrypted_blocks.push_back(encrypt_block(blocks[len - 1], keys_));
+	}
+
+	return restore_message(encrypted_blocks);
 }
 
-string gost::decrypt(const string& message) const
+string gost::decrypt_simple(const string& message) const
 {
-	return encrypt(message, true);
+	const vector<char> bytes(message.begin(), message.end());
+	const auto bits = get_bits(bytes);
+	auto blocks = get_blocks(bits, 128, false);
+
+	vector<vector<bool>> encrypted_blocks;
+	encrypted_blocks.reserve(blocks.size());
+
+	const auto len = blocks.size();
+	if (len > 2) for (unsigned int i = 0; i < len - 2; i++) encrypted_blocks.push_back(decrypt_block(blocks[i], keys_));
+
+	const auto rest = 128 - blocks[len - 1].size();
+	if (rest != 0)
+	{
+		auto yn = decrypt_block(blocks[len - 2], keys_);
+		auto r = vector<bool>(yn.end() - rest, yn.end());
+		yn = vector<bool>(yn.begin(), yn.end() - rest);
+
+		auto xn = blocks[len - 1];
+		xn.insert(xn.end(), r.begin(), r.end());
+
+		const auto y_prev = decrypt_block(xn, keys_);
+
+		encrypted_blocks.push_back(y_prev);
+		encrypted_blocks.push_back(yn);
+	}
+	else
+	{
+		if (len > 1) encrypted_blocks.push_back(decrypt_block(blocks[len - 2], keys_));
+		encrypted_blocks.push_back(decrypt_block(blocks[len - 1], keys_));
+	}
+
+	return restore_message(encrypted_blocks);
+}
+
+string gost::encrypt_blocks(const string& message, const string& sync) const
+{
+	const vector<char> sync_bytes(sync.begin(), sync.end());
+	const auto sync_bits = get_bits(sync_bytes);
+	
+	const vector<char> bytes(message.begin(), message.end());
+	const auto bits = get_bits(bytes);
+	auto blocks = get_blocks(bits, 128, false);
+
+	vector<vector<bool>> encrypted_blocks;
+	encrypted_blocks.reserve(blocks.size());
+
+	const auto len = blocks.size();
+	encrypted_blocks.push_back(sync_bits);
+	if (len > 2) 
+		for (unsigned int i = 0; i < len - 2; i++) 
+			encrypted_blocks.push_back(encrypt_block(xor_v(blocks[i], encrypted_blocks[i]), keys_));
+
+	const auto rest = 128 - blocks[len - 1].size();
+	if (rest != 0)
+	{
+		auto yn = encrypt_block(xor_v(blocks[len - 2], encrypted_blocks[len - 2]), keys_);
+		auto r = vector<bool>(yn.end() - rest, yn.end());
+		yn = vector<bool>(yn.begin(), yn.end() - rest);
+
+		auto xn = xor_v(blocks[len - 1], yn);
+		xn.insert(xn.end(), r.begin(), r.end());
+
+		const auto y_prev = encrypt_block(xn, keys_);
+
+		encrypted_blocks.push_back(y_prev);
+		encrypted_blocks.push_back(yn);
+	}
+	else
+	{
+		if (len > 1) encrypted_blocks.push_back(encrypt_block(xor_v(blocks[len - 2], encrypted_blocks[len - 2]), keys_));
+		encrypted_blocks.push_back(encrypt_block(xor_v(blocks[len - 1], encrypted_blocks[len - 1]), keys_));
+	}
+
+	return restore_message(vector<vector<bool>>(encrypted_blocks.begin() + 1, encrypted_blocks.end()));
+}
+
+string gost::decrypt_blocks(const string& message, const string& sync) const
+{
+	const vector<char> sync_bytes(sync.begin(), sync.end());
+	const auto sync_bits = get_bits(sync_bytes);
+
+	const vector<char> bytes(message.begin(), message.end());
+	const auto bits = get_bits(bytes);
+	auto blocks = get_blocks(bits, 128, false);
+	auto filled_blocks = get_blocks(bits, 128, true);
+
+	vector<vector<bool>> encrypted_blocks;
+	encrypted_blocks.reserve(blocks.size());
+
+	const auto len = blocks.size();
+	if (len > 2)
+		for (unsigned int i = 0; i < len - 2; i++)
+			encrypted_blocks.push_back(xor_v(decrypt_block(blocks[i], keys_), !i ? sync_bits : blocks[i - 1]));
+
+	const auto rest = 128 - blocks[len - 1].size();
+	if (rest != 0)
+	{
+		auto yn = xor_v(decrypt_block(blocks[len - 2], keys_), filled_blocks[len - 1]);
+		auto r = vector<bool>(yn.end() - rest, yn.end());
+		yn = vector<bool>(yn.begin(), yn.end() - rest);
+
+		auto xn = blocks[len - 1];
+		xn.insert(xn.end(), r.begin(), r.end());
+
+		const auto y_prev = xor_v(decrypt_block(xn, keys_), len > 2 ? blocks[len - 3] : sync_bits);
+
+		encrypted_blocks.push_back(y_prev);
+		encrypted_blocks.push_back(yn);
+	}
+	else
+	{
+		if (len > 1) encrypted_blocks.push_back(xor_v(decrypt_block(blocks[len - 2], keys_), len == 2 ? sync_bits : blocks[len - 3]));
+		encrypted_blocks.push_back(xor_v(decrypt_block(blocks[len - 1], keys_), blocks[len - 2]));
+	}
+
+	return restore_message(encrypted_blocks);
 }

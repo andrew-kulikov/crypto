@@ -35,7 +35,7 @@ vector<bool> plus_vec(const vector<bool>& a, const vector<bool>& b, int mod);
 
 vector<bool> minus_vec(const vector<bool>& a, const vector<bool>& b, int mod);
 
-vector<vector<bool>> get_blocks(vector<bool> bits, unsigned int block_size);
+vector<vector<bool>> get_blocks(vector<bool> bits, unsigned int block_size, bool fill_zeros = true);
 
 char restore_byte(const vector<bool>& bits);
 
