@@ -6,9 +6,9 @@ poolsize = 8
 accurate = True
 
 def main():
-    public, private = rsa.newkeys(1024, accurate=accurate, poolsize=poolsize)
+    public, private = rsa.newkeys(2048, accurate=accurate, poolsize=poolsize)
     
-    encrypred = rsa.encrypt(b'ti sho za zver takoi voobsche??', public)
+    encrypred = rsa.encrypt(b'encrypt me pls', public)
     decrypted = rsa.decrypt(encrypred, private)
     
     print(str(public._save_pkcs1_pem(), encoding='utf-8'))
