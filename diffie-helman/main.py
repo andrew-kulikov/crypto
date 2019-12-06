@@ -2,7 +2,7 @@ import random
 from ec import ECPoint, EllipticCurve
 from hellman import DiffieHellman
 
-EC_A = 6
+EC_A = 8
 EC_B = 213
 EC_P = 17
 EC_POINT_COORD = 18
