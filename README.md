@@ -9,4 +9,4 @@
 5. Hash-functions. HMAC algorithm. [code](hmac)
 6. Signing algorithms. ГОСТ 3410. [code](gost3410)
 7. Eliptic curves cryptography. Diffie-Hellman algorithm. [code](diffie-helman)
-8. Stenography. JPEG stenorrapry algorithms. [code](stenography)
+8. Stenography. JPEG stenograpry algorithms. [code](stenography)
